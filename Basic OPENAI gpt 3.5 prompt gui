@@ -1,0 +1,84 @@
+import customtkinter as ctk
+import openai
+
+# Set your OpenAI API key here
+openai.api_key = 'SET HERE'
+
+def get_response():
+    prompt = prompt_text.get("1.0", ctk.END).strip()
+    if prompt:
+        status_label.configure(text="Fetching response...")
+        root.update_idletasks()
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=150
+            )
+            response_text.delete("1.0", ctk.END)
+            response_text.insert(ctk.END, response.choices[0].message['content'].strip())
+            status_label.configure(text="Response received")
+        except Exception as e:
+            response_text.delete("1.0", ctk.END)
+            response_text.insert(ctk.END, f"Error: {str(e)}")
+            status_label.configure(text="Error occurred")
+
+def clear_text():
+    prompt_text.delete("1.0", ctk.END)
+    response_text.delete("1.0", ctk.END)
+    status_label.configure(text="Cleared")
+
+# Create the main window
+root = ctk.CTk()
+root.title("ChatGPT GUI")
+root.geometry("600x600")
+
+# Set the appearance mode and color theme
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("dark-blue")
+
+# Define the font
+font = ("Gotham Black", 16)
+
+# Create a frame for the prompt
+prompt_frame = ctk.CTkFrame(root, corner_radius=10)
+prompt_frame.pack(padx=20, pady=20, fill="both", expand=True)
+
+# Create a label for the prompt frame
+prompt_label = ctk.CTkLabel(prompt_frame, text="Enter your prompt", font=font)
+prompt_label.pack(pady=10)
+
+# Create a text box for the prompt
+prompt_text = ctk.CTkTextbox(prompt_frame, wrap=ctk.WORD, width=50, height=10, corner_radius=10, font=("Gotham Black", 12))
+prompt_text.pack(padx=10, pady=10, fill="both", expand=True)
+
+# Create a frame for the buttons
+button_frame = ctk.CTkFrame(root, corner_radius=10)
+button_frame.pack(padx=20, pady=10, fill="x", expand=True)
+
+# Create a button to send the prompt
+send_button = ctk.CTkButton(button_frame, text="Send", command=get_response, corner_radius=10, font=font)
+send_button.pack(side="left", padx=10, pady=10, expand=True)
+
+# Create a button to clear the text
+clear_button = ctk.CTkButton(button_frame, text="Clear", command=clear_text, corner_radius=10, font=font)
+clear_button.pack(side="left", padx=10, pady=10, expand=True)
+
+# Create a frame for the response
+response_frame = ctk.CTkFrame(root, corner_radius=10)
+response_frame.pack(padx=20, pady=20, fill="both", expand=True)
+
+# Create a label for the response frame
+response_label = ctk.CTkLabel(response_frame, text="Response", font=font)
+response_label.pack(pady=10)
+
+# Create a text box for the response
+response_text = ctk.CTkTextbox(response_frame, wrap=ctk.WORD, width=50, height=10, corner_radius=10, font=("Gotham Black", 12))
+response_text.pack(padx=10, pady=10, fill="both", expand=True)
+
+# Create a status bar
+status_label = ctk.CTkLabel(root, text="Ready", anchor="w", font=("Gotham Black", 12))
+status_label.pack(side="bottom", fill="x")
+
+# Run the application
+root.mainloop()
