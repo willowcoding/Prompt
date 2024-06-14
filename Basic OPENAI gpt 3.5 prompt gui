@@ -2,7 +2,10 @@ import customtkinter as ctk
 import openai
 
 # Set your OpenAI API key here
-openai.api_key = 'SET HERE'
+openai.api_key = 'put open ai key here'
+
+# List to store the conversation history
+conversation_history = []
 
 def get_response():
     prompt = prompt_text.get("1.0", ctk.END).strip()
@@ -10,28 +13,55 @@ def get_response():
         status_label.configure(text="Fetching response...")
         root.update_idletasks()
         try:
+            # Add the user prompt to the conversation history
+            conversation_history.append({"role": "user", "content": prompt})
+            
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
+                messages=conversation_history,
                 max_tokens=150
             )
+            response_content = response.choices[0].message['content'].strip()
+            
+            # Add the AI response to the conversation history
+            conversation_history.append({"role": "assistant", "content": response_content})
+            
+            response_text.configure(state="normal")
             response_text.delete("1.0", ctk.END)
-            response_text.insert(ctk.END, response.choices[0].message['content'].strip())
+            response_text.insert(ctk.END, response_content)
+            response_text.configure(state="disabled")
+            
+            response_history.configure(state="normal")
+            response_history.insert(ctk.END, f"User: {prompt}\nBot: {response_content}\n\n")
+            response_history.configure(state="disabled")
+            
             status_label.configure(text="Response received")
         except Exception as e:
+            response_text.configure(state="normal")
             response_text.delete("1.0", ctk.END)
             response_text.insert(ctk.END, f"Error: {str(e)}")
+            response_text.configure(state="disabled")
             status_label.configure(text="Error occurred")
 
 def clear_text():
     prompt_text.delete("1.0", ctk.END)
+    response_text.configure(state="normal")
     response_text.delete("1.0", ctk.END)
+    response_text.configure(state="disabled")
     status_label.configure(text="Cleared")
+
+def clear_history():
+    response_history.configure(state="normal")
+    response_history.delete("1.0", ctk.END)
+    response_history.configure(state="disabled")
+    status_label.configure(text="History Cleared")
+    # Clear the conversation history
+    conversation_history.clear()
 
 # Create the main window
 root = ctk.CTk()
 root.title("ChatGPT GUI")
-root.geometry("600x600")
+root.geometry("800x1000")  # Increase the window size
 
 # Set the appearance mode and color theme
 ctk.set_appearance_mode("dark")
@@ -49,7 +79,7 @@ prompt_label = ctk.CTkLabel(prompt_frame, text="Enter your prompt", font=font)
 prompt_label.pack(pady=10)
 
 # Create a text box for the prompt
-prompt_text = ctk.CTkTextbox(prompt_frame, wrap=ctk.WORD, width=50, height=10, corner_radius=10, font=("Gotham Black", 12))
+prompt_text = ctk.CTkTextbox(prompt_frame, wrap=ctk.WORD, width=70, height=60, corner_radius=10, font=("Gotham Black", 12))
 prompt_text.pack(padx=10, pady=10, fill="both", expand=True)
 
 # Create a frame for the buttons
@@ -73,12 +103,30 @@ response_label = ctk.CTkLabel(response_frame, text="Response", font=font)
 response_label.pack(pady=10)
 
 # Create a text box for the response
-response_text = ctk.CTkTextbox(response_frame, wrap=ctk.WORD, width=50, height=10, corner_radius=10, font=("Gotham Black", 12))
+response_text = ctk.CTkTextbox(response_frame, wrap=ctk.WORD, width=70, height=20, corner_radius=10, font=("Gotham Black", 12))
 response_text.pack(padx=10, pady=10, fill="both", expand=True)
+response_text.configure(state="disabled")
+
+# Create a frame for the response history
+history_frame = ctk.CTkFrame(root, corner_radius=10)
+history_frame.pack(padx=20, pady=20, fill="both", expand=True)
+
+# Create a label for the response history frame
+history_label = ctk.CTkLabel(history_frame, text="Response History", font=font)
+history_label.pack(pady=10)
+
+# Create a text box for the response history
+response_history = ctk.CTkTextbox(history_frame, wrap=ctk.WORD, width=50, height=40, corner_radius=10, font=("Gotham Black", 12))
+response_history.pack(padx=10, pady=10, fill="both", expand=True)
+response_history.configure(state="disabled")
 
 # Create a status bar
 status_label = ctk.CTkLabel(root, text="Ready", anchor="w", font=("Gotham Black", 12))
 status_label.pack(side="bottom", fill="x")
+
+# Create a button to clear the response history
+clear_history_button = ctk.CTkButton(root, text="Clear History", command=clear_history, corner_radius=10, font=font)
+clear_history_button.pack(side="bottom", anchor="e", padx=20, pady=10)
 
 # Run the application
 root.mainloop()
